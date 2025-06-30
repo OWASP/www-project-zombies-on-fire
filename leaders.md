@@ -1,4 +1,3 @@
 ### Leaders
-* [Leader Name](mailto:leader.email@owasp.org)
-* [Leader Name](mailto:leader.email@owasp.org)
-* [Leader Name](mailto:leader.email@owasp.org)
+* [Nathan Case](mailto:nathan.case@owasp.org)
+* [Jon McCoy](mailto:nathan.case@owasp.org)

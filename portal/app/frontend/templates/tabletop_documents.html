@@ -1,0 +1,242 @@
+{% extends "base.html" %}
+
+{% block title %}Generate Documents{% endblock %}
+
+{% block content %}
+<div id="loading" class="loading">
+    <div class="spinner"></div>
+</div>
+
+<div id="documents-content" class="hidden">
+    <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 2rem;">
+        <div>
+            <h1 id="tabletop-title"></h1>
+            <p style="color: #666;">Generate exercise documents using specialized AI agents</p>
+        </div>
+        <div>
+            <a id="back-link" href="#" class="btn btn-secondary">Back to Tabletop</a>
+        </div>
+    </div>
+
+    <div class="card" style="margin-bottom: 2rem;">
+        <h2>Document Generation</h2>
+        <p style="color: #666; margin-bottom: 1rem;">
+            Each document type is created by a specialized AI agent that understands
+            its specific purpose and requirements.
+        </p>
+
+        <div id="generate-controls">
+            <div class="form-group">
+                <label>Select documents to generate:</label>
+                <div id="document-checkboxes" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 0.5rem; margin-top: 0.5rem;">
+                </div>
+            </div>
+            <button id="generate-btn" class="btn btn-primary" onclick="generateDocuments()">
+                Generate Selected Documents
+            </button>
+            <button class="btn btn-success" onclick="generateAllDocuments()" style="margin-left: 0.5rem;">
+                Generate All Documents
+            </button>
+        </div>
+
+        <div id="generating-status" class="hidden" style="text-align: center; padding: 2rem;">
+            <div class="spinner" style="margin: 0 auto 1rem;"></div>
+            <p id="generating-message">Generating documents...</p>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>Generated Documents</h2>
+        <div id="documents-list" class="grid grid-2" style="margin-top: 1rem;">
+            <p id="no-documents" style="color: #666; grid-column: 1 / -1;">
+                No documents generated yet. Select document types above and click Generate.
+            </p>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const tabletopId = {{ tabletop_id }};
+    let documentTypes = [];
+    let existingDocuments = [];
+
+    const documentTypeNames = {
+        'scenario_brief': 'Scenario Brief',
+        'facilitator_guide': 'Facilitator Guide',
+        'participant_handbook': 'Participant Handbook',
+        'inject_cards': 'Inject Cards',
+        'assessment_rubric': 'Assessment Rubric',
+        'after_action_template': 'After Action Template'
+    };
+
+    async function loadData() {
+        try {
+            // Load tabletop info
+            const tabletopResponse = await apiCall(`/api/tabletops/${tabletopId}`);
+            if (tabletopResponse.ok) {
+                const tabletop = await tabletopResponse.json();
+                document.getElementById('tabletop-title').textContent = tabletop.title;
+                document.getElementById('back-link').href = `/app/tabletop/${tabletopId}`;
+
+                if (!tabletop.is_complete) {
+                    alert('Please answer all questions before generating documents.');
+                    window.location.href = `/app/tabletop/${tabletopId}/questions`;
+                    return;
+                }
+            }
+
+            // Load document types
+            const typesResponse = await apiCall('/api/documents/types');
+            if (typesResponse.ok) {
+                documentTypes = await typesResponse.json();
+                renderDocumentCheckboxes();
+            }
+
+            // Load existing documents
+            await loadDocuments();
+
+            document.getElementById('loading').classList.add('hidden');
+            document.getElementById('documents-content').classList.remove('hidden');
+        } catch (error) {
+            console.error('Error loading data:', error);
+        }
+    }
+
+    function renderDocumentCheckboxes() {
+        const container = document.getElementById('document-checkboxes');
+        container.innerHTML = '';
+
+        documentTypes.forEach(dt => {
+            const label = document.createElement('label');
+            label.style.cssText = 'display: flex; align-items: center; gap: 0.5rem; cursor: pointer;';
+            label.innerHTML = `
+                <input type="checkbox" value="${dt.type}" checked>
+                <span><strong>${dt.name}</strong></span>
+            `;
+            container.appendChild(label);
+        });
+    }
+
+    async function loadDocuments() {
+        const response = await apiCall(`/api/documents/tabletop/${tabletopId}`);
+        if (response.ok) {
+            existingDocuments = await response.json();
+            renderDocuments();
+        }
+    }
+
+    function renderDocuments() {
+        const container = document.getElementById('documents-list');
+        const noDocsMsg = document.getElementById('no-documents');
+
+        if (existingDocuments.length === 0) {
+            noDocsMsg.classList.remove('hidden');
+            return;
+        }
+
+        noDocsMsg.classList.add('hidden');
+        container.innerHTML = '';
+
+        existingDocuments.forEach(doc => {
+            const card = document.createElement('div');
+            card.className = 'document-card';
+            card.innerHTML = `
+                <div style="display: flex; justify-content: space-between; align-items: start;">
+                    <h4>${documentTypeNames[doc.document_type] || doc.document_type}</h4>
+                    <span class="status-badge status-${doc.status}">${doc.status}</span>
+                </div>
+                <p>${doc.title || 'Processing...'}</p>
+                ${doc.status === 'completed' ?
+                    `<div style="display: flex; gap: 0.5rem; margin-top: 1rem;">
+                        <a href="/api/documents/${doc.id}/download" class="btn btn-primary" style="flex: 1; text-align: center; font-size: 0.9rem;">
+                            Download PDF
+                        </a>
+                        <button onclick="regenerateDocument(${doc.id})" class="btn btn-secondary" style="font-size: 0.9rem;">
+                            Regenerate
+                        </button>
+                    </div>` :
+                    doc.status === 'failed' ?
+                    `<p style="color: var(--primary); font-size: 0.9rem;">${doc.error_message || 'Generation failed'}</p>
+                     <button onclick="regenerateDocument(${doc.id})" class="btn btn-secondary" style="margin-top: 0.5rem;">
+                        Retry
+                     </button>` :
+                    `<div class="loading" style="padding: 1rem;"><div class="spinner" style="width: 24px; height: 24px;"></div></div>`
+                }
+            `;
+            container.appendChild(card);
+        });
+    }
+
+    async function generateDocuments() {
+        const checkboxes = document.querySelectorAll('#document-checkboxes input:checked');
+        const selectedTypes = Array.from(checkboxes).map(cb => cb.value);
+
+        if (selectedTypes.length === 0) {
+            alert('Please select at least one document type');
+            return;
+        }
+
+        await startGeneration(selectedTypes);
+    }
+
+    async function generateAllDocuments() {
+        const allTypes = documentTypes.map(dt => dt.type);
+        await startGeneration(allTypes);
+    }
+
+    async function startGeneration(types) {
+        document.getElementById('generate-controls').classList.add('hidden');
+        document.getElementById('generating-status').classList.remove('hidden');
+
+        try {
+            const response = await apiCall(
+                `/api/tabletops/${tabletopId}/generate`,
+                'POST',
+                { document_types: types }
+            );
+
+            if (response.ok) {
+                const docs = await response.json();
+                existingDocuments = docs;
+                renderDocuments();
+            } else {
+                const error = await response.json();
+                alert(error.detail || 'Failed to generate documents');
+            }
+        } catch (error) {
+            alert('An error occurred during generation');
+        }
+
+        document.getElementById('generating-status').classList.add('hidden');
+        document.getElementById('generate-controls').classList.remove('hidden');
+    }
+
+    async function regenerateDocument(docId) {
+        if (!confirm('Regenerate this document? The existing content will be replaced.')) {
+            return;
+        }
+
+        document.getElementById('generating-status').classList.remove('hidden');
+        document.getElementById('generating-message').textContent = 'Regenerating document...';
+
+        try {
+            const response = await apiCall(`/api/documents/${docId}/regenerate`, 'POST');
+
+            if (response.ok) {
+                await loadDocuments();
+            } else {
+                const error = await response.json();
+                alert(error.detail || 'Failed to regenerate document');
+            }
+        } catch (error) {
+            alert('An error occurred');
+        }
+
+        document.getElementById('generating-status').classList.add('hidden');
+    }
+
+    loadData();
+</script>
+{% endblock %}

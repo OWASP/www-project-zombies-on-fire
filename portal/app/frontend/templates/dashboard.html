@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+    <h1>Your Tabletops</h1>
+    <a href="/app/tabletop/new" class="btn btn-primary">+ Create New Tabletop</a>
+</div>
+
+<div id="loading" class="loading">
+    <div class="spinner"></div>
+</div>
+
+<div id="empty-state" class="card hidden" style="text-align: center; padding: 4rem;">
+    <h2 style="color: #666; margin-bottom: 1rem;">No Tabletops Yet</h2>
+    <p style="color: #888; margin-bottom: 2rem;">Create your first tabletop exercise to get started.</p>
+    <a href="/app/tabletop/new" class="btn btn-primary">Create Tabletop</a>
+</div>
+
+<div id="tabletops-grid" class="grid grid-2 hidden">
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    async function loadTabletops() {
+        const token = localStorage.getItem('access_token');
+        if (!token) {
+            window.location.href = '/app/login';
+            return;
+        }
+
+        try {
+            const response = await apiCall('/api/tabletops/');
+
+            if (response.ok) {
+                const tabletops = await response.json();
+                document.getElementById('loading').classList.add('hidden');
+
+                if (tabletops.length === 0) {
+                    document.getElementById('empty-state').classList.remove('hidden');
+                } else {
+                    displayTabletops(tabletops);
+                }
+            }
+        } catch (error) {
+            console.error('Error loading tabletops:', error);
+        }
+    }
+
+    function displayTabletops(tabletops) {
+        const grid = document.getElementById('tabletops-grid');
+        grid.innerHTML = '';
+        grid.classList.remove('hidden');
+
+        tabletops.forEach(tabletop => {
+            const card = document.createElement('div');
+            card.className = 'card';
+            card.innerHTML = `
+                <div style="display: flex; justify-content: space-between; align-items: start;">
+                    <h3 style="margin-bottom: 0.5rem;">${escapeHtml(tabletop.title)}</h3>
+                    <span class="status-badge status-${tabletop.status}">${tabletop.status.replace('_', ' ')}</span>
+                </div>
+                <p style="color: #666; margin-bottom: 1rem;">${escapeHtml(tabletop.description || 'No description')}</p>
+                <div class="progress-bar">
+                    <div class="fill" style="width: ${tabletop.is_complete ? '100' : '50'}%"></div>
+                </div>
+                <p style="color: #888; font-size: 0.85rem; margin-bottom: 1rem;">
+                    Created: ${new Date(tabletop.created_at).toLocaleDateString()}
+                </p>
+                <div style="display: flex; gap: 0.5rem;">
+                    <a href="/app/tabletop/${tabletop.id}" class="btn btn-secondary" style="flex: 1; text-align: center;">View</a>
+                    ${tabletop.is_complete ?
+                        `<a href="/app/tabletop/${tabletop.id}/documents" class="btn btn-success" style="flex: 1; text-align: center;">Documents</a>` :
+                        `<a href="/app/tabletop/${tabletop.id}/questions" class="btn btn-primary" style="flex: 1; text-align: center;">Continue</a>`
+                    }
+                </div>
+            `;
+            grid.appendChild(card);
+        });
+    }
+
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    loadTabletops();
+</script>
+{% endblock %}

@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+
+{% block title %}Welcome{% endblock %}
+
+{% block content %}
+<div style="text-align: center; padding: 4rem 0;">
+    <h1 style="font-size: 3rem; color: var(--dark); margin-bottom: 1rem;">
+        <span style="color: var(--primary);">🔥</span> Zombies on Fire
+    </h1>
+    <h2 style="color: var(--secondary); font-weight: normal; margin-bottom: 2rem;">
+        Tabletop Exercise Generation Portal
+    </h2>
+    <p style="max-width: 600px; margin: 0 auto 2rem; color: #666; font-size: 1.1rem;">
+        An AI-powered platform for creating comprehensive tabletop cybersecurity exercises.
+        Generate professional scenario briefs, facilitator guides, participant handbooks, and more.
+    </p>
+    <div style="margin-bottom: 3rem;">
+        <a href="/app/register" class="btn btn-primary" style="margin-right: 1rem;">Get Started</a>
+        <a href="/app/login" class="btn btn-secondary">Sign In</a>
+    </div>
+</div>
+
+<div class="grid grid-3">
+    <div class="card">
+        <h2>📝 Guided Creation</h2>
+        <p>Answer 4 key questions to define your tabletop exercise:</p>
+        <ul style="margin-left: 1.5rem; color: #666;">
+            <li>Game Overview & Scenario</li>
+            <li>Challenges & Problems</li>
+            <li>Unexpected Twists</li>
+            <li>Expected Conclusion</li>
+        </ul>
+    </div>
+    <div class="card">
+        <h2>🤖 AI-Powered Agents</h2>
+        <p>Each document type has a specialized AI agent:</p>
+        <ul style="margin-left: 1.5rem; color: #666;">
+            <li>Scenario Brief Agent</li>
+            <li>Facilitator Guide Agent</li>
+            <li>Participant Handbook Agent</li>
+            <li>And more...</li>
+        </ul>
+    </div>
+    <div class="card">
+        <h2>📄 PDF Export</h2>
+        <p>Generate professional documents ready to use:</p>
+        <ul style="margin-left: 1.5rem; color: #666;">
+            <li>Scenario Briefs</li>
+            <li>Inject Cards</li>
+            <li>Assessment Rubrics</li>
+            <li>After Action Templates</li>
+        </ul>
+    </div>
+</div>
+
+<div class="card" style="margin-top: 2rem;">
+    <h2>Example Scenarios</h2>
+    <div class="grid grid-2" style="margin-top: 1rem;">
+        <div style="padding: 1rem; background: var(--light); border-radius: 8px;">
+            <h4 style="color: var(--dark);">🏥 Healthcare Crisis</h4>
+            <p style="color: #666; font-size: 0.9rem;">
+                A hospital operating without a steam plant faces a critical power shortage.
+                Players must manage resources and make decisions as backup batteries deplete.
+            </p>
+        </div>
+        <div style="padding: 1rem; background: var(--light); border-radius: 8px;">
+            <h4 style="color: var(--dark);">🏛️ Infrastructure Failure</h4>
+            <p style="color: #666; font-size: 0.9rem;">
+                A region's critical infrastructure begins failing. Players must coordinate
+                response efforts and manage cascading effects across systems.
+            </p>
+        </div>
+        <div style="padding: 1rem; background: var(--light); border-radius: 8px;">
+            <h4 style="color: var(--dark);">🛡️ Cyber Attack Response</h4>
+            <p style="color: #666; font-size: 0.9rem;">
+                An organization detects a sophisticated intrusion. Players must contain
+                the threat while maintaining business operations.
+            </p>
+        </div>
+        <div style="padding: 1rem; background: var(--light); border-radius: 8px;">
+            <h4 style="color: var(--dark);">⚔️ Fantasy Quest</h4>
+            <p style="color: #666; font-size: 0.9rem;">
+                A Lord of the Rings style quest where elves journey to the boats,
+                facing orc encounters and strategic decisions along the way.
+            </p>
+        </div>
+    </div>
+</div>
+{% endblock %}

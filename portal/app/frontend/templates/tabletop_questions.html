@@ -1,0 +1,266 @@
+{% extends "base.html" %}
+
+{% block title %}Answer Questions{% endblock %}
+
+{% block extra_styles %}
+<style>
+    .question-step {
+        display: none;
+    }
+    .question-step.active {
+        display: block;
+    }
+    .step-indicator {
+        display: flex;
+        justify-content: center;
+        margin-bottom: 2rem;
+    }
+    .step {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: #ddd;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        margin: 0 0.5rem;
+        transition: all 0.3s;
+    }
+    .step.active {
+        background: var(--secondary);
+        color: white;
+    }
+    .step.completed {
+        background: var(--success);
+        color: white;
+    }
+    .step-line {
+        width: 50px;
+        height: 2px;
+        background: #ddd;
+        align-self: center;
+    }
+    .step-line.completed {
+        background: var(--success);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div id="loading" class="loading">
+    <div class="spinner"></div>
+</div>
+
+<div id="questions-content" class="hidden" style="max-width: 800px; margin: 0 auto;">
+    <h1 id="tabletop-title" style="text-align: center; margin-bottom: 0.5rem;"></h1>
+    <p style="text-align: center; color: #666; margin-bottom: 2rem;">
+        Answer these 4 questions to create your tabletop exercise
+    </p>
+
+    <div class="step-indicator">
+        <div class="step" data-step="0">1</div>
+        <div class="step-line"></div>
+        <div class="step" data-step="1">2</div>
+        <div class="step-line"></div>
+        <div class="step" data-step="2">3</div>
+        <div class="step-line"></div>
+        <div class="step" data-step="3">4</div>
+    </div>
+
+    <div class="card">
+        <div id="question-0" class="question-step active">
+            <h2>Question 1: Game Overview</h2>
+            <p style="color: #666; margin-bottom: 1.5rem;" id="question-text-0"></p>
+            <div class="form-group">
+                <label>Your Answer</label>
+                <textarea id="answer-0" rows="8" placeholder="Describe your scenario..."></textarea>
+            </div>
+        </div>
+
+        <div id="question-1" class="question-step">
+            <h2>Question 2: Challenges & Problems</h2>
+            <p style="color: #666; margin-bottom: 1.5rem;" id="question-text-1"></p>
+            <div class="form-group">
+                <label>Your Answer</label>
+                <textarea id="answer-1" rows="8" placeholder="Describe the challenges..."></textarea>
+            </div>
+        </div>
+
+        <div id="question-2" class="question-step">
+            <h2>Question 3: Unexpected Twists</h2>
+            <p style="color: #666; margin-bottom: 1.5rem;" id="question-text-2"></p>
+            <div class="form-group">
+                <label>Your Answer</label>
+                <textarea id="answer-2" rows="8" placeholder="Describe the twists..."></textarea>
+            </div>
+        </div>
+
+        <div id="question-3" class="question-step">
+            <h2>Question 4: Expected Conclusion</h2>
+            <p style="color: #666; margin-bottom: 1.5rem;" id="question-text-3"></p>
+            <div class="form-group">
+                <label>Your Answer</label>
+                <textarea id="answer-3" rows="8" placeholder="Describe the conclusion..."></textarea>
+            </div>
+        </div>
+
+        <div id="error-message" class="alert alert-error hidden"></div>
+
+        <div style="display: flex; justify-content: space-between; margin-top: 2rem;">
+            <button id="prev-btn" class="btn btn-secondary" onclick="prevStep()" disabled>
+                Previous
+            </button>
+            <button id="next-btn" class="btn btn-primary" onclick="nextStep()">
+                Save & Continue
+            </button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const tabletopId = {{ tabletop_id }};
+    let questions = [];
+    let currentStep = 0;
+    const questionTypes = ['overview', 'challenges', 'twists', 'conclusion'];
+
+    async function loadQuestions() {
+        try {
+            const response = await apiCall(`/api/tabletops/${tabletopId}`);
+
+            if (response.ok) {
+                const tabletop = await response.json();
+                questions = tabletop.questions;
+
+                document.getElementById('tabletop-title').textContent = tabletop.title;
+
+                // Map questions by type
+                const questionMap = {};
+                questions.forEach(q => {
+                    questionMap[q.question_type] = q;
+                });
+
+                // Fill in question texts and existing answers
+                questionTypes.forEach((type, index) => {
+                    const q = questionMap[type];
+                    if (q) {
+                        document.getElementById(`question-text-${index}`).textContent = q.question_text;
+                        if (q.answer) {
+                            document.getElementById(`answer-${index}`).value = q.answer;
+                        }
+                    }
+                });
+
+                // Find first unanswered question
+                for (let i = 0; i < questionTypes.length; i++) {
+                    const q = questionMap[questionTypes[i]];
+                    if (!q || !q.answer) {
+                        currentStep = i;
+                        break;
+                    }
+                    currentStep = i;
+                }
+
+                updateUI();
+                document.getElementById('loading').classList.add('hidden');
+                document.getElementById('questions-content').classList.remove('hidden');
+            }
+        } catch (error) {
+            console.error('Error loading questions:', error);
+        }
+    }
+
+    function updateUI() {
+        // Update steps visibility
+        document.querySelectorAll('.question-step').forEach((el, i) => {
+            el.classList.toggle('active', i === currentStep);
+        });
+
+        // Update step indicators
+        document.querySelectorAll('.step').forEach((el, i) => {
+            el.classList.remove('active', 'completed');
+            if (i < currentStep) {
+                el.classList.add('completed');
+            } else if (i === currentStep) {
+                el.classList.add('active');
+            }
+        });
+
+        // Update step lines
+        document.querySelectorAll('.step-line').forEach((el, i) => {
+            el.classList.toggle('completed', i < currentStep);
+        });
+
+        // Update buttons
+        document.getElementById('prev-btn').disabled = currentStep === 0;
+
+        if (currentStep === 3) {
+            document.getElementById('next-btn').textContent = 'Complete & Generate Documents';
+        } else {
+            document.getElementById('next-btn').textContent = 'Save & Continue';
+        }
+    }
+
+    async function saveCurrentAnswer() {
+        const answer = document.getElementById(`answer-${currentStep}`).value.trim();
+
+        if (answer.length < 10) {
+            document.getElementById('error-message').textContent = 'Please provide a more detailed answer (at least 10 characters).';
+            document.getElementById('error-message').classList.remove('hidden');
+            return false;
+        }
+
+        document.getElementById('error-message').classList.add('hidden');
+
+        const questionType = questionTypes[currentStep];
+
+        try {
+            const response = await apiCall(
+                `/api/tabletops/${tabletopId}/questions/${questionType}`,
+                'PUT',
+                {
+                    question_type: questionType,
+                    answer: answer
+                }
+            );
+
+            if (!response.ok) {
+                const data = await response.json();
+                document.getElementById('error-message').textContent = data.detail || 'Failed to save answer';
+                document.getElementById('error-message').classList.remove('hidden');
+                return false;
+            }
+
+            return true;
+        } catch (error) {
+            document.getElementById('error-message').textContent = 'An error occurred';
+            document.getElementById('error-message').classList.remove('hidden');
+            return false;
+        }
+    }
+
+    async function nextStep() {
+        const saved = await saveCurrentAnswer();
+        if (!saved) return;
+
+        if (currentStep < 3) {
+            currentStep++;
+            updateUI();
+        } else {
+            // All questions answered, go to documents
+            window.location.href = `/app/tabletop/${tabletopId}/documents`;
+        }
+    }
+
+    function prevStep() {
+        if (currentStep > 0) {
+            currentStep--;
+            updateUI();
+        }
+    }
+
+    loadQuestions();
+</script>
+{% endblock %}

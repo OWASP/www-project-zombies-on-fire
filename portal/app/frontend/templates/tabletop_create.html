@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+
+{% block title %}Create Tabletop{% endblock %}
+
+{% block content %}
+<div style="max-width: 700px; margin: 0 auto;">
+    <div class="card">
+        <h2>Create New Tabletop Exercise</h2>
+        <p style="color: #666; margin-bottom: 2rem;">
+            Start by providing basic information about your tabletop exercise.
+            You'll answer 4 key questions to build out the complete scenario.
+        </p>
+
+        <div id="error-message" class="alert alert-error hidden"></div>
+
+        <form id="create-form">
+            <div class="form-group">
+                <label for="title">Exercise Title *</label>
+                <input type="text" id="title" name="title" required
+                       placeholder="e.g., Critical Infrastructure Failure Response">
+            </div>
+
+            <div class="form-group">
+                <label for="description">Description</label>
+                <textarea id="description" name="description" rows="3"
+                          placeholder="Brief description of the exercise purpose and context..."></textarea>
+            </div>
+
+            <div class="form-group">
+                <label for="story_prompt">Initial Story Prompt</label>
+                <textarea id="story_prompt" name="story_prompt" rows="5"
+                          placeholder="Set the stage with an opening narrative. This will help guide the AI in generating your exercise materials...
+
+Example: The city's power grid has been experiencing intermittent failures for the past 48 hours. Initial reports suggest a coordinated cyber attack targeting SCADA systems. Key personnel are unavailable due to a holiday weekend..."></textarea>
+            </div>
+
+            <div style="display: flex; gap: 1rem; margin-top: 2rem;">
+                <a href="/app/dashboard" class="btn btn-secondary">Cancel</a>
+                <button type="submit" class="btn btn-primary" style="flex: 1;">
+                    Create & Continue to Questions
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const token = localStorage.getItem('access_token');
+    if (!token) {
+        window.location.href = '/app/login';
+    }
+
+    document.getElementById('create-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const errorDiv = document.getElementById('error-message');
+        errorDiv.classList.add('hidden');
+
+        const tabletopData = {
+            title: document.getElementById('title').value,
+            description: document.getElementById('description').value || null,
+            story_prompt: document.getElementById('story_prompt').value || null
+        };
+
+        try {
+            const response = await apiCall('/api/tabletops/', 'POST', tabletopData);
+            const data = await response.json();
+
+            if (response.ok) {
+                window.location.href = `/app/tabletop/${data.id}/questions`;
+            } else {
+                errorDiv.textContent = data.detail || 'Failed to create tabletop';
+                errorDiv.classList.remove('hidden');
+            }
+        } catch (error) {
+            errorDiv.textContent = 'An error occurred. Please try again.';
+            errorDiv.classList.remove('hidden');
+        }
+    });
+</script>
+{% endblock %}

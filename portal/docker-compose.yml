@@ -1,0 +1,35 @@
+# OWASP Zombies on Fire - Docker Compose Configuration
+version: '3.8'
+
+services:
+  portal:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      - DEBUG=False
+      - SECRET_KEY=${SECRET_KEY:-change-me-in-production}
+      - DATABASE_URL=sqlite:///./tabletop.db
+      - LLM_PROVIDER=${LLM_PROVIDER:-mock}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      - LLM_MODEL=${LLM_MODEL:-gpt-4}
+    volumes:
+      - ./uploads:/app/uploads
+      - ./generated_pdfs:/app/generated_pdfs
+      - ./tabletop.db:/app/tabletop.db
+    restart: unless-stopped
+
+  # Optional: PostgreSQL for production
+  # db:
+  #   image: postgres:15
+  #   environment:
+  #     - POSTGRES_USER=zombies
+  #     - POSTGRES_PASSWORD=on_fire
+  #     - POSTGRES_DB=zombies_on_fire
+  #   volumes:
+  #     - postgres_data:/var/lib/postgresql/data
+  #   restart: unless-stopped
+
+# volumes:
+#   postgres_data:

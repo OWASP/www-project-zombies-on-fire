@@ -1,0 +1,85 @@
+# OWASP Zombies on Fire - Production Docker Compose Configuration
+# Use: docker-compose -f docker-compose.prod.yml up -d
+
+version: '3.8'
+
+services:
+  portal:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: zombies-on-fire:latest
+    container_name: zombies-on-fire-portal
+    restart: always
+    ports:
+      - "8000:8000"
+    environment:
+      - DEBUG=False
+      - SECRET_KEY=${SECRET_KEY:?SECRET_KEY is required}
+      - DATABASE_URL=postgresql://zombies:${POSTGRES_PASSWORD:-zombies_secure_password}@db:5432/zombies_on_fire
+      - LLM_PROVIDER=${LLM_PROVIDER:-mock}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      - LLM_MODEL=${LLM_MODEL:-gpt-4}
+    volumes:
+      - uploads_data:/app/uploads
+      - pdfs_data:/app/generated_pdfs
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    networks:
+      - zombies-network
+
+  db:
+    image: postgres:15-alpine
+    container_name: zombies-on-fire-db
+    restart: always
+    environment:
+      - POSTGRES_USER=zombies
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-zombies_secure_password}
+      - POSTGRES_DB=zombies_on_fire
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U zombies -d zombies_on_fire"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - zombies-network
+
+  # Optional: Nginx reverse proxy for production
+  nginx:
+    image: nginx:alpine
+    container_name: zombies-on-fire-nginx
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./certs:/etc/nginx/certs:ro
+    depends_on:
+      - portal
+    networks:
+      - zombies-network
+    profiles:
+      - with-nginx
+
+networks:
+  zombies-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+    driver: local
+  uploads_data:
+    driver: local
+  pdfs_data:
+    driver: local

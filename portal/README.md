@@ -2,6 +2,19 @@
 
 An AI-powered platform for creating and managing tabletop cybersecurity exercises.
 
+## Platform Support
+
+| Platform | Status | Installation |
+|----------|--------|--------------|
+| macOS | Supported | `./scripts/install-mac.sh` |
+| Ubuntu/Debian | Supported | `./scripts/install-ubuntu.sh` |
+| Windows | Supported | `scripts\install-windows.ps1` |
+| Docker | Supported | `docker-compose up -d` |
+
+**Requirements:** Python 3.11+, 2GB RAM minimum
+
+For detailed deployment instructions, see [DEPLOYMENT.md](DEPLOYMENT.md).
+
 ## Features
 
 ### 1. Administrator Authentication
@@ -39,11 +52,36 @@ All generated documents can be exported as professional PDF files.
 
 ## Quick Start
 
-### Prerequisites
-- Python 3.11+
-- pip (Python package manager)
+### One-Command Installation
 
-### Installation
+**macOS:**
+```bash
+git clone https://github.com/OWASP/www-project-zombies-on-fire.git
+cd www-project-zombies-on-fire/portal && chmod +x scripts/install-mac.sh && ./scripts/install-mac.sh
+```
+
+**Ubuntu/Debian:**
+```bash
+git clone https://github.com/OWASP/www-project-zombies-on-fire.git
+cd www-project-zombies-on-fire/portal && chmod +x scripts/install-ubuntu.sh && ./scripts/install-ubuntu.sh
+```
+
+**Windows (PowerShell):**
+```powershell
+git clone https://github.com/OWASP/www-project-zombies-on-fire.git
+cd www-project-zombies-on-fire\portal
+powershell -ExecutionPolicy Bypass -File scripts\install-windows.ps1
+```
+
+**Docker:**
+```bash
+git clone https://github.com/OWASP/www-project-zombies-on-fire.git
+cd www-project-zombies-on-fire/portal
+cp .env.example .env
+docker-compose up -d
+```
+
+### Manual Installation
 
 1. Clone the repository:
 ```bash
@@ -75,14 +113,27 @@ python run.py
 
 6. Open http://localhost:8000 in your browser
 
-### Docker Deployment
+### Using Makefile (macOS/Linux)
 
 ```bash
-# Build and run
-docker-compose up -d
+make install      # Install dependencies
+make setup-env    # Create .env with generated secret key
+make run          # Run in production mode
+make dev          # Run in development mode (with auto-reload)
+make docker-run   # Run with Docker
+```
 
-# View logs
+### Docker Deployment
+
+**Development:**
+```bash
+docker-compose up -d
 docker-compose logs -f
+```
+
+**Production (with PostgreSQL):**
+```bash
+docker-compose -f docker-compose.prod.yml up -d
 ```
 
 ## Configuration

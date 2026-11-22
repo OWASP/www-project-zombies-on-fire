@@ -30,6 +30,14 @@ Open `http://127.0.0.1:8000/app` for the UI or `http://127.0.0.1:8000/api/docs` 
 
 See the [deployment guide](portal/DEPLOYMENT.md) for Docker, Windows, and other deployment options.
 
+## Run the test harness
+
+From the repository root, run `python3 tests/run.py` with Python 3.11+ and Node.js 18+. It exercises the opening round of every built-in game with the rules engine, checks artwork, and validates discovered templates.
+
+Install [the portal dependencies](portal/requirements.txt) into a virtual environment and run `python tests/run.py --portal` to exercise registration, login, tabletop creation, document generation, and PDF downloads. The portal checks use a temporary SQLite database and the mock AI provider.
+
+Put new Markdown, text, or JSON files anywhere under [templates/games/](templates/games/). The harness checks Markdown and text files for readable, nonempty UTF-8 content. To run a template through the portal, copy the [sample JSON fixture](tests/fixtures/tabletop.json) and fill in its title and four exercise answers. The harness discovers JSON fixtures automatically and runs each through all six document types when you pass `--portal`.
+
 ## Repository layout
 
 - [games/zombies-on-fire/](games/zombies-on-fire/) contains the standalone game, artwork, and local servers.

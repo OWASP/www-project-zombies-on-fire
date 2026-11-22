@@ -1,0 +1,7 @@
+{
+  "title": "Service outage tabletop",
+  "overview": "A fictional retailer loses access to its ordering dashboard during a peak sales period.",
+  "challenges": "Assign an incident lead, confirm the outage scope, and prioritize restoring customer orders.",
+  "twists": "The backup service is delayed while support receives conflicting reports about which locations are affected.",
+  "conclusion": "Restore order processing and agree on ownership, communications, and recovery verification."
+}

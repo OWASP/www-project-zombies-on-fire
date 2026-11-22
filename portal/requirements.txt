@@ -13,6 +13,7 @@ alembic>=1.12.1
 # Authentication
 python-jose[cryptography]>=3.3.0
 passlib[bcrypt]>=1.7.4
+bcrypt<5  # Passlib's bcrypt backend self-test relies on the pre-5 length behavior.
 
 # Validation & Settings
 pydantic>=2.5.0
